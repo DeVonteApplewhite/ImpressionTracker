@@ -406,7 +406,9 @@ class Highchart(object):
         if not os.path.exists(TMP_DIR): 
             os.mkdir(TMP_DIR)
         #new_filename = "%x.html" % (random.randint(pow(16, 5), pow(16, 6)-1))
-	new_filename = filename + ".html"
+
+	a = filename.split('.')
+	new_filename = a[0] + ".html" #ensures that html was always there
 
         #temp_dir = globals()['TMP_DIR']
         #if not temp_dir[-1] == "/":

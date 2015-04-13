@@ -11,42 +11,25 @@ class CustomStreamListener(tweepy.StreamListener): #listens for incomming tweets
 	def __init__(self):
 		super(CustomStreamListener, self).__init__()
 		self.count = 0 #count tweets
-		self.impression = mood()
+		self.impression = mood(20)
 		self.impression.load('positive-words.txt','negative-words.txt')
-		self.interval = 20
-		self.start = None #start timestamp
-		self.scoredump = 0
+
 	def on_data(self, data):
-		#print data
 		outString = data.encode('utf-8')
-		tweet = json.loads(outString.rstrip())
-		try:
-			self.scoredump += self.impression.netmood(tweet['text'].lower())
-			self.count += 1
-			if self.start == None:
-				self.start = self.impression.makedate(tweet['created_at'])
-			else:
-				now = self.impression.makedate(tweet['created_at'])
-				diff = 0
-				if now > self.start:
-					diff = now - self.start
-				else:
-					diff = self.start - now
-				if diff.seconds >= self.interval: #need to dump data
-					self.impression.add(self.scoredump,self.count)
-					self.scoredump = 0 #reset score
-					self.count = 0 #reset count
-					self.start = None #reset oldtime
-					self.impression.linegraph('Apple',"appleline",self.impression.moodarray,self.impression.countarray)
-					os.system("./putinwww.sh appleline.html")
-					#self.impression.clear()
-					if len(sys.argv) == 2:
-						print "OUT"
-			if(len(sys.argv) != 2):
-				print outString.rstrip()
-		except KeyError:
-			pass
+
+		if len(sys.argv) == 2: #want to dump data
+			result = self.impression.add(outString)
+
+			if result == 1: #show dumped data
+				self.impression.linegraph('Apple',"appleline",1)
+				os.system("./putinwww.sh appleline.html")
+				print "OUT"
+
+		else: #want to just print data
+			print outString.rstrip()
+		
 		return True
+
 	def on_error(self, status_code):
 		print >> sys.stderr, 'Encountered error with status code:', status_code
 		return True # Don't kill the stream

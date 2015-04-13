@@ -8,13 +8,26 @@ sys.path.insert(0,"/afs/nd.edu/coursesp.15/cse/cse40437.01/dropbox/dapplewh/prac
 from chart import Highchart
 
 class mood():
-	def __init__(self):
+	def __init__(self,interval):
 		self.EXAMPLE_CONFIG = {"xAxis": {"gridLineWidth": 0,"lineWidth": 0,"tickLength": 0,},\
 		"yAxis": {"gridLineWidth": 0,}}
+		self.interval = interval #interval to govern certain functions
 		self.moodwords = {}
 		self.moodarray = [] #net mood at each data dump
 		self.countarray = [] #number of tweets per data dump
+		self.moodbin = {} #holds lists of good, bad, and neutral tweet counts
+		self.moodbin['good'] = []
+		self.moodbin['bad'] = []
+		self.moodbin['neutral'] = []
 		self.count = 0
+
+		self.oldtime = None #holds the last timestamp
+		self.scoredump = 0 #aggregate score between intervals
+		self.goodcount = 0
+		self.badcount = 0
+		self.neutralcount = 0
+		self.localcount = 0 #total tweets processed in an interval
+
 	def makedate(self,datestring):
 		try:
 			tinfo = datestring.rstrip().split(' ')
@@ -92,55 +105,85 @@ class mood():
 		self.pie(companyname,"imp",count,good_count,bad_count,neutral_count)
 	#end def processtweets
 
-	def processTweets2(self,filename,companyname):
-		count = 0 #total tweets processed
-		moodarray = []
-		interval = 120 #seconds which is 5 minutes
-		oldtime = None #holds the last timestamp
-		scoredump = 0 #aggregate score between intervals
+	def processTweets2(self,filename,companyname,func):
+		self.clear() #reset stats for next dump interval
+
 		f = open(filename)
 		for line in f:
-			try:
-				a = json.loads(line.rstrip())
-			except ValueError:
-				continue
-			try:
-				s = a['text']
-			except KeyError:
-				continue
-			scoredump += self.netmood(a['text'].lower().encode('utf-8')) #accumilate a score
-			if oldtime != None:
-				t = self.makedate(a['created_at'])
-				diff = 0
-				if t > oldtime:
-					diff = t - oldtime
-				else:
-					diff = oldtime - t
-				if diff.seconds >= interval: #need to dump data
-					moodarray.append(scoredump)
-					scoredump = 0 #reset score
-					oldtime = None #reset oldtime
-			else:
-				oldtime = self.makedate(a['created_at']) #make the date
-			count += 1
-		if oldtime != None:
-			moodarray.append(scoredump)
+			self.add(line) 
+			
+		if self.oldtime != None: #dump leftover data that didn't reach the interval
+			self.moodarray.append(self.scoredump) #add net score
+			self.countarray.append(self.localcount)
+			self.moodbin['good'].append(self.goodcount)
+			self.moodbin['bad'].append(self.badcount)
+			self.moodbin['neutral'].append(self.neutralcount)
+
 		f.close() #close file
-		#print moodarray
-		print "Total Tweets: %d"%(count)
 
-		self.linegraph(companyname,"prog",moodarray)
-	#end def line
+		print "Total Tweets: %d"%(self.count)
 
-	def add(self,tweetscore,thecount = None):
-		self.moodarray.append(tweetscore)
-		if thecount != None:
-			self.countarray.append(thecount) #add count if available
-		self.count += 1
+		outfilename = companyname.lower()+"_line.html"
+		if func == 'line':
+			self.linegraph(companyname,outfilename,1) #adds count data
+		elif func == 'pie':
+			pass
 
-	def clear(self):
-		self.countarray = []
-		self.moodarray = []
+	def add(self,tweet): #process a tweet
+		try:
+			a = json.loads(tweet.rstrip())
+		except ValueError:
+			return 0
+		try:
+			s = a['text'] #just to check if the necessary keys are found
+			c = a['created_at']
+		except KeyError:
+			return 0
+
+		score = self.netmood(s.lower().encode('utf-8'))
+		self.scoredump += score #aggregate net score
+
+		if score > 0: #good tweet
+			self.goodcount += 1
+		elif score < 0: #bad tweet
+			self.badcount += 1
+		else: #neutral tweet
+			self.neutralcount += 1
+
+		self.localcount += 1
+		self.count += 1 #bookkeeping for entire process
+
+		if self.oldtime != None: #old time is initialized
+			t = self.makedate(c) #make usable date
+			diff = 0
+			if t > self.oldtime: #get time difference
+				diff = t - self.oldtime
+			else:
+				diff = self.oldtime - t
+			if diff.seconds >= self.interval: #need to dump data
+				self.moodarray.append(self.scoredump) #add net score
+				self.countarray.append(self.localcount)
+				self.moodbin['good'].append(self.goodcount)
+				self.moodbin['bad'].append(self.badcount)
+				self.moodbin['neutral'].append(self.neutralcount)
+
+				self.clear() #reset stats
+
+				return 1 #let listener know data has been dumped
+		else:
+			self.oldtime = self.makedate(c) #make the date
+		return 0 #no data has been dumped yet
+
+	def clear(self): #reset stats for next dump
+		self.oldtime = None #reset all stats for next dump
+		self.scoredump = 0
+		self.goodcount = 0
+		self.badcount = 0
+		self.neutralcount = 0
+		self.localcount = 0
+
+	def set_interval(self,value):
+		self.interval = value
 
 	def pie(self,companyname,filename,count,good,bad,neutral):
 		  #""" Basic Piechart Example """
@@ -156,14 +199,15 @@ class mood():
 		  chart.set_options(self.EXAMPLE_CONFIG)
 		  chart.show(filename)
 
-	def linegraph(self,companyname,filename,mooddata,countdata = None):
+	def linegraph(self,companyname,filename,countdata = None):
 		chart = Highchart()
 		chart.title(companyname)
-		#x = range(24)
-		chart.add_data_set(mooddata, series_type="line", name=companyname+" raw net mood", index=1)
 
-		if countdata != None:
-			averagemood = [float(mooddata[i])/countdata[i] for i in range(len(mooddata))]
+		chart.add_data_set(self.moodarray, series_type="line", name=companyname+" raw net mood", index=1)
+
+		if countdata != None: #add average mood
+			moodtotal = [self.moodbin['good'][i]+self.moodbin['bad'][i] for i in range(len(self.moodbin['good']))] #count of nonzero mood scores
+			averagemood = [float(self.moodarray[i])/moodtotal[i] for i in range(len(self.moodarray))]
 			chart.add_data_set(averagemood, series_type="line", name=companyname+" average net mood", index=2)
 
 		chart.colors(["#00FF00", "#FF0000", "#FFFF00"])
@@ -171,7 +215,7 @@ class mood():
 		chart.show(filename)
 
 if __name__ == "__main__":
-	m = mood()
+	m = mood(120)
 	m.load('positive-words.txt','negative-words.txt')
-	m.processTweets2('walmart.txt','Walmart')
+	m.processTweets2('walmart.txt','Lolmart','line')
 #end main
