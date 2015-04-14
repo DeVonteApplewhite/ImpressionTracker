@@ -11,12 +11,16 @@ class parser():
 	def __init__(self):
 		self.track_array = []
 		self.run_mode = None
-
 		self.interval = None
-	def help():
+		self.company = None
+		self.graph = None
+
+	def help(self):
 		print "usage listen.py options and arguments"
 		print "Options (short/long if available) [arguments] and explanations"
+		print "-c --company [name of company] company to track"
 		print "-f --filename [name of file containing track words]"
+		print "-g --graph [line/pie/all] which graph to create"
 		print "-i --interval [value in seconds] interval between data dumps"
 		print "-h --help displays helpful information on options available"
 		print "-p --print prints out tweets to STDOUT"
@@ -50,6 +54,10 @@ class parser():
 					return 0
 				self.run_mode = 'w' #set for web mode
 				print "set to web"
+			elif item == '-c' or item == '--company': #adding company name
+				mode = '-c'
+			elif item == '-g' or item == '--graph': #asking for graph feature
+				mode = '-g'
 			else: #process based on modes
 				if mode == '-f':
 					f = open(item)
@@ -62,31 +70,50 @@ class parser():
 				elif mode == '-t':
 					self.track_array.append(item.rstrip())
 					atleastoneword = 1
+				elif mode == '-c':
+					self.company = item.rstrip()
+				elif mode == '-g':
+					self.line = item.rstrip()
 				else:
 					print "Unexpected input"
 					self.help()
 					return 0
 
-		if atleastoneword == 1:
-			return 1
-		else: #no words were passed
+		if atleastoneword == 0:
 			print "No words were passed in to listen for"
 			return 0
+		if self.company == None:
+			print "No company name was passed to track"
+			return 0
+
+		return 1 #everything went well
 
 class CustomStreamListener(tweepy.StreamListener): #listens for incomming tweets
-	def __init__(self,mode=None,interval=None):
+	def __init__(self,myparser=None):
 		super(CustomStreamListener, self).__init__()
+
+		p = myparser
 		self.count = 0 #count tweet
-
 		self.mode = None
-		if mode != None:
-			self.mode = mode
-
 		self.impression = None
-		if interval != None:
-			self.impression = mood(interval)
-		else:
-			self.impression = mood(20)
+		self.companyname = None
+		self.companynameforfile = None #when formatting for files
+		self.graph = None
+
+		if p != None: #valid parser object
+			if p.run_mode != None:
+				self.mode = p.run_mode
+		
+			if p.interval != None:
+				self.impression = mood(p.interval)
+			else:
+				self.impression = mood(20)
+
+			if p.company != None:
+				self.companyname = p.company
+
+			if p.graph != None:
+				self.graph = p.graph
 
 		self.impression.load('positive-words.txt','negative-words.txt')
 
@@ -97,10 +124,16 @@ class CustomStreamListener(tweepy.StreamListener): #listens for incomming tweets
 			result = self.impression.add(outString)
 
 			if result == 1: #show dumped data
-				self.impression.linegraph('Apple',"appleline",1)
-				os.system("./putinwww.sh appleline.html")
-				print "OUT"
-
+				if self.graph == None or self.graph in ['line','all']:
+					self.companynameforfile = self.companyname.lower()+"line.html"
+					self.impression.linegraph(self.companyname,self.companynameforfile,1) #show second line
+					os.system("./putinwww.sh "+self.companynameforfile)
+					print "OUT linegraph"
+				if self.graph in ['pie','all']:
+					self.companynameforfile = self.companyname.lower()+"pie.html"
+					self.impression.piegraph(self.companyname,self.companynameforfile) #show second line
+					os.system("./putinwww.sh "+self.companynameforfile)
+					print "OUT piegraph"
 		else: #want to print data (None or p fall under this case)
 			print outString.rstrip()
 		
@@ -126,7 +159,7 @@ if __name__ == "__main__":
 	auth.set_access_token("3008646015-2ae2vykbLAT65ceJueytFDVkFaoOHjbmv8gELw6",
 	"88sNWTJSx0VnSmEKeeJk1s2zJd1kB8VVB4NBSFkvpaHDO")
 	api = tweepy.API(auth)
-	sapi = tweepy.streaming.Stream(auth, CustomStreamListener(p.run_mode,p.interval))
+	sapi = tweepy.streaming.Stream(auth, CustomStreamListener(p))
 
 	sapi.filter(track=p.track_array)
 	#sapi.filter(track=['Walmart', 'Sam''s Club', 'Sams Club', 'rollback', 'roll-back'])
