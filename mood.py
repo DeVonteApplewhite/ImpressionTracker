@@ -8,7 +8,7 @@ sys.path.insert(0,"/afs/nd.edu/coursesp.15/cse/cse40437.01/dropbox/dapplewh/prac
 from chart import Highchart
 
 class mood():
-	def __init__(self,interval):
+	def __init__(self,interval=300):
 		self.EXAMPLE_CONFIG = {"xAxis": {"gridLineWidth": 0,"lineWidth": 0,"tickLength": 0,},\
 		"yAxis": {"gridLineWidth": 0,}}
 		self.interval = interval #interval to govern certain functions
@@ -19,7 +19,7 @@ class mood():
 		self.moodbin['good'] = []
 		self.moodbin['bad'] = []
 		self.moodbin['neutral'] = []
-		self.count = 0
+		self.count = 0 #total tweets processed
 
 		self.oldtime = None #holds the last timestamp
 		self.scoredump = 0 #aggregate score between intervals
@@ -73,39 +73,7 @@ class mood():
 		return net
 	#end def netmood
 
-	def processTweets(self,filename,companyname):
-		count = 0 #total tweets processed
-		good_count = 0 #positive mood tweets
-		bad_count = 0 #negative mood tweets
-		neutral_count = 0 #no mood tweets
-		f = open(filename)
-		for line in f:
-			try:
-				a = json.loads(line.rstrip())
-			except ValueError:
-				continue
-			try:
-				s = a['text']
-			except KeyError:
-				continue
-			score = netmood(a['text'].lower().encode('utf-8'))
-			if score > 0: #good tweet
-				good_count += 1
-			elif score < 0: #bad tweet
-				bad_count += 1
-			else: #neutral tweet
-				neutral_count += 1
-			count += 1
-		f.close() #close file
-		print companyname
-		print "Total Tweets: %d"%(count)
-		print "Good Tweets: %d (%f)"%(good_count,good_count/float(count))
-		print "Bad Tweets: %d (%f)"%(bad_count,bad_count/float(count))
-		print "Neutral Tweets: %d (%f)"%(neutral_count,neutral_count/float(count))
-		self.pie(companyname,"imp",count,good_count,bad_count,neutral_count)
-	#end def processtweets
-
-	def processTweets2(self,filename,companyname,func):
+	def processTweets(self,filename,companyname,func):
 		self.clear() #reset stats for next dump interval
 
 		f = open(filename)
@@ -123,11 +91,12 @@ class mood():
 
 		print "Total Tweets: %d"%(self.count)
 
-		outfilename = companyname.lower()+"_line.html"
 		if func == 'line':
+			outfilename = companyname.lower()+"_line.html"
 			self.linegraph(companyname,outfilename,1) #adds count data
 		elif func == 'pie':
-			pass
+			outfilename = companyname.lower()+"_pie.html"
+			self.piegraph(companyname,outfilename) #single pie
 
 	def add(self,tweet): #process a tweet
 		try:
@@ -185,19 +154,28 @@ class mood():
 	def set_interval(self,value):
 		self.interval = value
 
-	def pie(self,companyname,filename,count,good,bad,neutral):
-		  #""" Basic Piechart Example """
-		  chart = Highchart()
-		  chart.title(companyname)
-		  chart.add_data_set([["Good Tweets", int(100*good/float(count))],
-		      ["Bad Tweets", int(100*bad/float(count))],
-		["Neutral Tweets", int(100*neutral/float(count))]],
-		      series_type="pie",
-		      name="",
-		      startAngle=45)
-		  chart.colors(["#00FF00", "#FF0000", "#FFFF00"])
-		  chart.set_options(self.EXAMPLE_CONFIG)
-		  chart.show(filename)
+	def piegraph(self,companyname,filename,multi=False):
+		chart = Highchart()
+		chart.title(companyname)
+
+		good = 0
+		bad = 0
+		neutral = 0
+
+		if multi == False:
+			good = sum(self.moodbin['good'])
+			bad = sum(self.moodbin['bad'])
+			neutral = sum(self.moodbin['neutral'])
+	
+		chart.add_data_set([["Good Tweets", int(100*good/float(self.count))],
+		    ["Bad Tweets", int(100*bad/float(self.count))],
+	["Neutral Tweets", int(100*neutral/float(self.count))]],
+		    series_type="pie",
+		    name=companyname+" Impression Pie Chart",
+		    startAngle=45)
+		chart.colors(["#00FF00", "#FF0000", "#FFFF00"])
+		chart.set_options(self.EXAMPLE_CONFIG)
+		chart.show(filename)
 
 	def linegraph(self,companyname,filename,countdata = None):
 		chart = Highchart()
@@ -217,5 +195,5 @@ class mood():
 if __name__ == "__main__":
 	m = mood(120)
 	m.load('positive-words.txt','negative-words.txt')
-	m.processTweets2('walmart.txt','Lolmart','line')
+	m.processTweets('walmart.txt','Lolmart','pie')
 #end main
