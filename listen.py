@@ -29,6 +29,10 @@ class parser():
 		print "-w --web processes tweets and sends results to html files"
 
 	def parse_args(self):
+		if len(sys.argv) == 1: #gave no arguments
+			self.help()
+			return 0
+
 		optargs = sys.argv[1:] #get arguments to program
 		mode = None
 		atleastoneword = 0 #checks that at least one word is passed
