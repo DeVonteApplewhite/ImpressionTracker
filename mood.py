@@ -2,7 +2,7 @@
 #02/25/15 CSE40YYY
 
 import json,sys,datetime
-sys.path.insert(0,"/afs/nd.edu/coursesp.15/cse/cse40437.01/dropbox/dapplewh/prac/PyHighcharts-master/highcharts")
+sys.path.insert(0,"PyHighcharts-master/highcharts")
 
 
 from chart import Highchart
