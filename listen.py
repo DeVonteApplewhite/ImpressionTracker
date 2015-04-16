@@ -1,6 +1,6 @@
 #/afs/nd.edu/user14/csesoft/new/bin/python
 from tweepy import StreamListener
-import json, time, sys, os
+import json, time, sys, os, pwd
 from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
 from tweepy import Stream
@@ -103,6 +103,8 @@ class CustomStreamListener(tweepy.StreamListener): #listens for incomming tweets
 		self.companyname = None
 		self.companynameforfile = None #when formatting for files
 		self.graph = None
+		self.username = pwd.getpwuid(os.getuid()).pw_name
+		self.url = "http://www.cse.nd.edu/~"+self.username+"/"
 
 		if p != None: #valid parser object
 			if p.run_mode != None:
@@ -131,13 +133,13 @@ class CustomStreamListener(tweepy.StreamListener): #listens for incomming tweets
 				if self.graph == None or self.graph in ['line','all']:
 					self.companynameforfile = self.companyname.lower()+"line.html"
 					self.impression.linegraph(self.companyname,self.companynameforfile,1) #show second line
-					os.system("./putinwww.sh "+self.companynameforfile)
-					print "OUT linegraph"
+					os.system("./putinwww.py "+self.companynameforfile+" "+str(p.interval))
+					print self.url+self.companynameforfile
 				if self.graph in ['pie','all']:
 					self.companynameforfile = self.companyname.lower()+"pie.html"
 					self.impression.piegraph(self.companyname,self.companynameforfile) #show second line
-					os.system("./putinwww.sh "+self.companynameforfile)
-					print "OUT piegraph"
+					os.system("./putinwww.py "+self.companynameforfile+" "+str(p.interval))
+					print self.url+self.companynameforfile
 		else: #want to print data (None or p fall under this case)
 			print outString.rstrip()
 		
