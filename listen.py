@@ -119,7 +119,7 @@ class CustomStreamListener(tweepy.StreamListener): #listens for incomming tweets
 			if p.graph != None:
 				self.graph = p.graph
 
-		self.impression.load('positive-words.txt','negative-words.txt')
+		self.impression.load('text_files/positive-words.txt','text_files/negative-words.txt')
 
 	def on_data(self, data):
 		outString = data.encode('utf-8')

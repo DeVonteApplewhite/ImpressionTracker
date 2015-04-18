@@ -1,7 +1,7 @@
 #DeVonte' Applewhite
 #02/25/15 CSE40YYY
 
-import json,sys,datetime
+import json,sys,datetime,time
 sys.path.insert(0,"PyHighcharts-master/highcharts")
 
 
@@ -9,8 +9,9 @@ from chart import Highchart
 
 class mood():
 	def __init__(self,interval=300):
-		self.EXAMPLE_CONFIG = {"xAxis": {"gridLineWidth": 0,"lineWidth": 0,"tickLength": 0,},\
+		self.EXAMPLE_CONFIG = {"chart": {"zoomType": 'x'}, "xAxis": {"type": 'datetime', 'minRange': 1000 * 10},\
 		"yAxis": {"gridLineWidth": 0,}}
+		self.START_TIME = datetime.datetime.now()
 		self.interval = interval #interval to govern certain functions
 		self.moodwords = {}
 		self.moodarray = [] #net mood at each data dump
@@ -187,13 +188,15 @@ class mood():
 			moodtotal = [self.moodbin['good'][i]+self.moodbin['bad'][i] for i in range(len(self.moodbin['good']))] #count of nonzero mood scores
 			averagemood = [float(self.moodarray[i])/moodtotal[i] for i in range(len(self.moodarray))]
 			chart.add_data_set(averagemood, series_type="line", name=companyname+" average net mood", index=2)
-
+		
+		chart.set_start_date(self.START_TIME)
+		chart.set_interval(1000 * self.interval)
 		chart.colors(["#00FF00", "#FF0000", "#FFFF00"])
 		chart.set_options(self.EXAMPLE_CONFIG)
 		chart.show(filename)
 
 if __name__ == "__main__":
 	m = mood(120)
-	m.load('positive-words.txt','negative-words.txt')
-	m.processTweets('walmart.txt','Lolmart','pie')
+	m.load('text_files/positive-words.txt','text_files/negative-words.txt')
+	m.processTweets('text_files/walmart.txt','Lolmart','pie')
 #end main
