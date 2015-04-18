@@ -188,9 +188,21 @@ class mood():
 			moodtotal = [self.moodbin['good'][i]+self.moodbin['bad'][i] for i in range(len(self.moodbin['good']))] #count of nonzero mood scores
 			averagemood = [float(self.moodarray[i])/moodtotal[i] for i in range(len(self.moodarray))]
 			chart.add_data_set(averagemood, series_type="line", name=companyname+" average net mood", index=2)
+			chart.set_start_date(self.START_TIME)
+			chart.set_interval(1000 * self.interval)
 		
-		chart.set_start_date(self.START_TIME)
-		chart.set_interval(1000 * self.interval)
+		# Add Pie Chart Data
+		good = sum(self.moodbin['good'])
+		bad = sum(self.moodbin['bad'])
+		neutral = sum(self.moodbin['neutral'])
+	
+		chart.add_data_set([["Good Tweets", int(100*good/float(self.count))],
+		    			["Bad Tweets", int(100*bad/float(self.count))],
+					["Neutral Tweets", int(100*neutral/float(self.count))]],
+		    			series_type="pie",
+		    			center=[100,80],
+					name=companyname +" Tweet Breakdown")
+		
 		chart.colors(["#00FF00", "#FF0000", "#FFFF00"])
 		chart.set_options(self.EXAMPLE_CONFIG)
 		chart.show(filename)
