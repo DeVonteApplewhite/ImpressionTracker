@@ -7,6 +7,13 @@ from tweepy import Stream
 import tweepy
 from mood import mood
 
+#TODO: make database in www space
+#it/cmp/day/graphs.html
+#it/lister.py - list all available graphs
+#it/lister.html - list of all available graphs
+#A concept of time and day in the mood class
+#timestamp and daystamp
+
 class parser():
 	def __init__(self):
 		self.track_array = []

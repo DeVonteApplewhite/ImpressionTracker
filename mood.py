@@ -124,6 +124,9 @@ class mood():
 
 		if self.oldtime != None: #old time is initialized
 			t = self.makedate(c) #make usable date
+			if t == None: #date string malformed (shouldn't happen)
+				continue
+
 			diff = 0
 			if t > self.oldtime: #get time difference
 				diff = t - self.oldtime
