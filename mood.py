@@ -6,7 +6,7 @@ sys.path.insert(0,"PyHighcharts-master/highcharts")
 
 
 from chart import Highchart
-
+#TODO: Eliminate division by zero errors
 class mood():
 	def __init__(self,interval=300):
 		self.EXAMPLE_CONFIG = {"chart": {"zoomType": 'x'}, "xAxis": {"type": 'datetime', 'minRange': 1000 * 10},\
@@ -126,7 +126,7 @@ class mood():
 		if self.oldtime != None: #old time is initialized
 			t = self.makedate(c) #make usable date
 			if t == None: #date string malformed (shouldn't happen)
-				continue
+				return #cannot process the date so don't add the tweet
 
 			diff = 0
 			if t > self.oldtime: #get time difference
