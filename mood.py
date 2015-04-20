@@ -22,6 +22,9 @@ class mood():
 		self.moodbin['neutral'] = []
 		self.count = 0 #total tweets processed
 
+		self.avg_followers_seed = []
+		self.avg_followers = 0.0
+
 		self.oldtime = None #holds the last timestamp
 		self.scoredump = 0 #aggregate score between intervals
 		self.goodcount = 0
@@ -110,8 +113,31 @@ class mood():
 		except KeyError:
 			return 0
 
+
+
 		score = self.netmood(s.lower().encode('utf-8'))
-		self.scoredump += score #aggregate net score
+
+		#calculate multiplier for more followers
+		follower_multiplier = 1
+		follower_count = a['user']['followers_count']
+		if self.count < 30:
+			self.avg_followers_seed.append(follower_count)
+
+		elif self.count > 30:
+			follower_multiplier = float(follower_count)/self.avg_followers
+			self.avg_followers = ( (self.avg_followers * self.count ) + follower_count ) / (self.count + 1)
+
+		else:
+			total_followers = 0
+			for followers in self.avg_followers_seed:
+				total_followers += followers
+			self.avg_followers = float(total_followers)/len(self.avg_followers_seed)
+
+		self.scoredump += score*follower_multiplier #aggregate net score
+
+		#print score
+		#print score*follower_multiplier
+		#print follower_count
 
 		if score > 0: #good tweet
 			self.goodcount += 1
@@ -125,8 +151,8 @@ class mood():
 
 		if self.oldtime != None: #old time is initialized
 			t = self.makedate(c) #make usable date
-			if t == None: #date string malformed (shouldn't happen)
-				continue
+			#if t == None: #date string malformed (shouldn't happen)
+			#	continue
 
 			diff = 0
 			if t > self.oldtime: #get time difference
