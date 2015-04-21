@@ -8,13 +8,6 @@ import tweepy
 import datetime
 from mood import mood
 
-#TODO: make database in www space
-#it/cmp/day/graphs.html
-#it/lister.py - list all available graphs
-#it/lister.html - list of all available graphs
-#A concept of time and day in the mood class
-#timestamp and daystamp
-
 class parser():
 	def __init__(self):
 		self.track_array = []
@@ -137,8 +130,7 @@ class CustomStreamListener(tweepy.StreamListener): #listens for incomming tweets
 		self.impression.load('text_files/positive-words.txt','text_files/negative-words.txt')
 
 		self.setup() #self.path will be ~/www/it/company_name and self.filepath will be updated
-		print "self.path:%s"%(self.path)
-		print "self.filepath:%s"%(self.filepath)
+		print "Database Link:\n%s"%(self.url+self.db)
 
 	def on_data(self, data):
 		outString = data.encode('utf-8')
