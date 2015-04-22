@@ -10,6 +10,7 @@ class mood():
 	def __init__(self,interval=300):
 		self.EXAMPLE_CONFIG = {"chart": {"zoomType": 'x'}, "xAxis": {"type": 'datetime', 'minRange': 1000 * 10},\
 		"yAxis": {"gridLineWidth": 0,}}
+		self.colors = {"Green": "#48DD38" ,"Red": "#FC404A", "Yellow": "#FFCF41","Blue": "#4949C6"}
 		self.START_TIME = datetime.datetime.now()
 		self.interval = interval #interval to govern certain functions
 		self.moodwords = {}
@@ -27,6 +28,7 @@ class mood():
 		self.badcount = 0
 		self.neutralcount = 0
 		self.localcount = 0 #total tweets processed in an interval
+
 
 	def makedate(self,datestring):
 		try:
@@ -176,7 +178,7 @@ class mood():
 		    series_type="pie",
 		    name=companyname+" Impression Pie Chart",
 		    startAngle=45)
-		chart.colors(["#00FF00", "#FF0000", "#FFFF00"])
+		chart.colors([self.colors['Green'],self.colors['Red'],self.colors['Yellow']])
 		chart.set_options(self.EXAMPLE_CONFIG)
 		chart.show(filename)
 
@@ -185,11 +187,13 @@ class mood():
 		chart.title(companyname)
 
 		chart.add_data_set(self.moodarray, series_type="line", name=companyname+" raw net mood", index=1)
+		chart.colors([self.colors['Blue']])
 
 		if countdata != None: #add average mood
 			moodtotal = [self.moodbin['good'][i]+self.moodbin['bad'][i] for i in range(len(self.moodbin['good']))] #count of nonzero mood scores
 			averagemood = [float(self.moodarray[i])/(moodtotal[i] or 1) for i in range(len(self.moodarray))]
 			chart.add_data_set(averagemood, series_type="line", name=companyname+" average net mood", index=2)
+			chart.colors([self.colors['Red']])
 			chart.set_start_date(self.START_TIME)
 			chart.set_interval(1000 * self.interval)
 		
@@ -205,7 +209,7 @@ class mood():
 		    			center=[100,80],
 					name=companyname +" Tweet Breakdown")
 		
-		chart.colors(["#00FF00", "#FF0000", "#FFFF00"])
+		chart.colors([self.colors['Green'],self.colors['Red'],self.colors['Yellow']])
 		chart.set_options(self.EXAMPLE_CONFIG)
 		chart.show(filename)
 
