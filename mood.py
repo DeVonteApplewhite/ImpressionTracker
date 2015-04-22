@@ -8,8 +8,61 @@ from chart import Highchart
 
 class mood():
 	def __init__(self,interval=300):
-		self.EXAMPLE_CONFIG = {"chart": {"zoomType": 'x'}, "xAxis": {"type": 'datetime', 'minRange': 1000 * 10},\
-		"yAxis": {"gridLineWidth": 0,}}
+		self.colors = {"Green": "#48DD38" ,"Red": "#FC404A", "Yellow": "#FFCF41","Blue": "#4949C6", "Purple": "#B133BE", "Background": "#3E3E40", "Border": "#606063", "White": "#E0E0E3", "Grid Line": "#707073", "Minor Grid Line": "#505053", "Axis Title": "#A0A0A3"}
+		self.EXAMPLE_CONFIG = {
+			"chart":{ 
+				  "zoomType": 'x',
+				  "backgroundColor": self.colors['Background'],
+				  "plotBorderColor": self.colors['Border']
+				},
+			"title":{ 
+				  "style": {
+					"color":self.colors['White']
+				  }
+				},
+			"xAxis":{ 
+				  "type": 'datetime', 
+				  'minRange': 1000 * 10,
+				  "gridLineColor": self.colors['Grid Line'],
+					"labels": {
+         					"style": {
+            						"color":self.colors['White']
+         					}
+      					},
+      				  'lineColor': self.colors['Grid Line'],
+      				  'minorGridLineColor': self.colors['Minor Grid Line'],
+      				  'tickColor': self.colors['Grid Line'],
+      				  'title': {
+         				'style': {
+            					'color': self.colors['Axis Title']
+       					}
+				  }
+   				},
+			"yAxis":{
+      				  "gridLineColor": self.colors['Grid Line'],
+      				  "labels": {
+         				"style": {
+            					"color":self.colors['White']
+         				}
+      				  },
+      				  "lineColor": self.colors['Grid Line'],
+      				  "minorGridLineColor": self.colors['Minor Grid Line'],
+      				  "tickColor": self.colors['Grid Line'],
+      				  "tickWidth": 1,
+      				  "title": {
+         			  	"style": {
+            					'color': self.colors['Axis Title']
+         			  	}
+      				  }
+   				},
+			"legend":{
+			      	  "itemStyle": {
+				  	"color": self.colors['White']
+			      	  },
+				  "backgroundColor": self.colors['Border']
+			   	},
+			}
+		
 		self.START_TIME = datetime.datetime.now()
 		self.interval = interval #interval to govern certain functions
 		self.moodwords = {}
@@ -30,6 +83,7 @@ class mood():
 		self.badcount = 0
 		self.neutralcount = 0
 		self.localcount = 0 #total tweets processed in an interval
+
 
 	def makedate(self,datestring):
 		try:
@@ -202,7 +256,7 @@ class mood():
 		    series_type="pie",
 		    name=companyname+" Impression Pie Chart",
 		    startAngle=45)
-		chart.colors(["#00FF00", "#FF0000", "#FFFF00"])
+		chart.colors([self.colors['Green'],self.colors['Red'],self.colors['Yellow']])
 		chart.set_options(self.EXAMPLE_CONFIG)
 		chart.show(filename)
 
@@ -210,28 +264,22 @@ class mood():
 		chart = Highchart()
 		chart.title(companyname)
 
+		# Add data
+		chart.add_data_set(self.moodbin['good'], series_type="column", name="Good", index=1)
+		chart.add_data_set(self.moodbin['bad'], series_type="column", name="Bad", index=1)
+		chart.add_data_set(self.moodbin['neutral'], series_type="column", name="Neutral", index=1)
 		chart.add_data_set(self.moodarray, series_type="line", name=companyname+" raw net mood", index=1)
 
-		if countdata != None: #add average mood
+		# Add average mood
+		if countdata != None:
 			moodtotal = [self.moodbin['good'][i]+self.moodbin['bad'][i] for i in range(len(self.moodbin['good']))] #count of nonzero mood scores
 			averagemood = [float(self.moodarray[i])/(moodtotal[i] or 1) for i in range(len(self.moodarray))]
 			chart.add_data_set(averagemood, series_type="line", name=companyname+" average net mood", index=2)
-			chart.set_start_date(self.START_TIME)
-			chart.set_interval(1000 * self.interval)
 		
-		# Add Pie Chart Data
-		good = sum(self.moodbin['good'])
-		bad = sum(self.moodbin['bad'])
-		neutral = sum(self.moodbin['neutral'])
-	
-		chart.add_data_set([["Good Tweets", int(100*good/float(self.count or 1))],
-		    			["Bad Tweets", int(100*bad/float(self.count or 1))],
-					["Neutral Tweets", int(100*neutral/float(self.count or 1))]],
-		    			series_type="pie",
-		    			center=[100,80],
-					name=companyname +" Tweet Breakdown")
-		
-		chart.colors(["#00FF00", "#FF0000", "#FFFF00"])
+		chart.colors([self.colors['Green'],self.colors['Red'],self.colors['Yellow'],self.colors['Blue'],self.colors['Purple']])
+
+		chart.set_start_date(self.START_TIME)
+		chart.set_interval(1000 * self.interval)
 		chart.set_options(self.EXAMPLE_CONFIG)
 		chart.show(filename)
 
