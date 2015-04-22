@@ -5,10 +5,11 @@ import json,sys,datetime,time
 sys.path.insert(0,"PyHighcharts-master/highcharts")
 
 from chart import Highchart
+from highchart_types import OptionTypeError, Series, SeriesOptions
 
 class mood():
 	def __init__(self,interval=300):
-		self.colors = {"Green": "#48DD38" ,"Red": "#FC404A", "Yellow": "#FFCF41","Blue": "#4949C6", "Purple": "#B133BE", "Background": "#3E3E40", "Border": "#606063", "White": "#E0E0E3", "Grid Line": "#707073", "Minor Grid Line": "#505053", "Axis Title": "#A0A0A3"}
+		self.colors = {"Green": "#48DD38" ,"Red": "#FC404A", "Yellow": "#FFCF41","Blue": "#6A6AC9", "Purple": "#B133BE", "Background": "#3E3E40", "Border": "#606063", "White": "#E0E0E3", "Grid Line": "#707073", "Minor Grid Line": "#505053", "Axis Title": "#A0A0A3"}
 		self.EXAMPLE_CONFIG = {
 			"chart":{ 
 				  "zoomType": 'x',
@@ -60,7 +61,7 @@ class mood():
 				  	"color": self.colors['White']
 			      	  },
 				  "backgroundColor": self.colors['Border']
-			   	},
+			   	}
 			}
 		
 		self.START_TIME = datetime.datetime.now()
@@ -268,7 +269,7 @@ class mood():
 		chart.add_data_set(self.moodbin['good'], series_type="column", name="Good", index=1)
 		chart.add_data_set(self.moodbin['bad'], series_type="column", name="Bad", index=1)
 		chart.add_data_set(self.moodbin['neutral'], series_type="column", name="Neutral", index=1)
-		chart.add_data_set(self.moodarray, series_type="line", name=companyname+" raw net mood", index=1)
+		chart.add_data_set(self.moodarray, series_type="line", name=companyname+" raw net mood", index=1, lineWidth=4, marker={"lineColor":self.colors['White'],"radius":4,"lineWidth":2})
 
 		# Add average mood
 		if countdata != None:
