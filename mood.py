@@ -113,7 +113,8 @@ class mood():
 		except KeyError:
 			return 0
 
-
+		if a['lang'] != "en":
+			return 0
 
 		score = self.netmood(s.lower().encode('utf-8'))
 
@@ -135,7 +136,7 @@ class mood():
 
 		self.scoredump += score*follower_multiplier #aggregate net score
 
-		#print score
+		print a['text'].encode('utf-8')
 		#print score*follower_multiplier
 		#print follower_count
 
