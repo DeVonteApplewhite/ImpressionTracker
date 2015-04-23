@@ -5,14 +5,8 @@ from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
 from tweepy import Stream
 import tweepy
+import datetime
 from mood import mood
-
-#TODO: make database in www space
-#it/cmp/day/graphs.html
-#it/lister.py - list all available graphs
-#it/lister.html - list of all available graphs
-#A concept of time and day in the mood class
-#timestamp and daystamp
 
 class parser():
 	def __init__(self):
@@ -56,7 +50,6 @@ class parser():
 					print "Cannot operate in both web and print mode"
 					return 0
 				self.run_mode = 'p' #set for print mode
-				print "set to print"
 			elif item == '-t' or item == '--track':
 				mode = '-t'
 			elif item == '-w' or item == '--web':
@@ -64,7 +57,6 @@ class parser():
 					print "Cannot operate in both web and print mode"
 					return 0
 				self.run_mode = 'w' #set for web mode
-				print "set to web"
 			elif item == '-c' or item == '--company': #adding company name
 				mode = '-c'
 			elif item == '-g' or item == '--graph': #asking for graph feature
@@ -77,14 +69,13 @@ class parser():
 					atleastoneword = 1
 				elif mode == '-i':
 					self.interval = int(item) #set interval
-					print "set interval"
 				elif mode == '-t':
 					self.track_array.append(item.rstrip())
 					atleastoneword = 1
 				elif mode == '-c':
 					self.company = item.rstrip()
 				elif mode == '-g':
-					self.line = item.rstrip()
+					self.graph = item.rstrip()
 				else:
 					print "Unexpected input"
 					self.help()
@@ -112,6 +103,14 @@ class CustomStreamListener(tweepy.StreamListener): #listens for incomming tweets
 		self.graph = None
 		self.username = pwd.getpwuid(os.getuid()).pw_name
 		self.url = "http://www.cse.nd.edu/~"+self.username+"/"
+		self.mainpath = os.getcwd()
+		self.path = os.path.expanduser("~/") #os.path.expanduser() expands ~ if needed
+		self.path += "/www/"
+		self.db = "it"
+		self.dbpath = self.path + self.db
+		self.date = datetime.datetime.now().strftime("%Y-%m-%d") #get current date
+		self.time = datetime.datetime.now().strftime("%H:%M:%S") #get current time
+		self.filepath = None
 
 		if p != None: #valid parser object
 			if p.run_mode != None:
@@ -130,6 +129,9 @@ class CustomStreamListener(tweepy.StreamListener): #listens for incomming tweets
 
 		self.impression.load('text_files/positive-words.txt','text_files/negative-words.txt')
 
+		self.setup() #self.path will be ~/www/it/company_name and self.filepath will be updated
+		print "Database Link:\n%s"%(self.url+self.db)
+
 	def on_data(self, data):
 		outString = data.encode('utf-8')
 
@@ -138,14 +140,16 @@ class CustomStreamListener(tweepy.StreamListener): #listens for incomming tweets
 
 			if result == 1: #show dumped data
 				if self.graph == None or self.graph in ['line','all']:
-					self.companynameforfile = self.companyname.lower()+"line.html"
+					self.companynameforfile = self.companyname.lower()+"_line.html"
 					self.impression.linegraph(self.companyname,self.companynameforfile,1) #show second line
-					os.system("./putinwww.py "+self.companynameforfile+" "+str(p.interval))
+					self.put("line")
+					#os.system("./putinwww.py "+self.companynameforfile+" "+str(p.interval))
 					print self.url+self.companynameforfile
 				if self.graph in ['pie','all']:
-					self.companynameforfile = self.companyname.lower()+"pie.html"
+					self.companynameforfile = self.companyname.lower()+"_pie.html"
 					self.impression.piegraph(self.companyname,self.companynameforfile) #show second line
-					os.system("./putinwww.py "+self.companynameforfile+" "+str(p.interval))
+					self.put("pie")
+					#os.system("./putinwww.py "+self.companynameforfile+" "+str(p.interval))
 					print self.url+self.companynameforfile
 		else: #want to print data (None or p fall under this case)
 			print outString.rstrip()
@@ -159,14 +163,54 @@ class CustomStreamListener(tweepy.StreamListener): #listens for incomming tweets
 		print >> sys.stderr, 'Timeout...'
 		return True # Don't kill the stream
 
+	def setup(self): #checks for the database and company name dir and creates them if needed
+		if not os.path.exists(self.dbpath):
+			os.mkdir(self.dbpath)
+		else: #path exists, ensure it is a directory
+			if not os.path.isdir(self.dbpath): #not a directory
+				os.system("rm "+self.dbpath) #remove it and make it a directory
+				os.mkdir(self.dbpath)
+
+		self.filepath = self.dbpath+"/"+self.companyname #~/www/it/company_name
+		if not os.path.exists(self.filepath):
+			os.mkdir(self.filepath)
+		else: #path exists, ensure it is a directory
+			if not os.path.isdir(self.filepath): #not a directory
+				os.system("rm "+self.filepath) #remove it and make it a directory
+				os.mkdir(self.filepath)
+
+		self.filepath += "/"+self.date #company_name/date
+		if not os.path.exists(self.filepath):
+			os.mkdir(self.filepath)
+		else: #path exists, ensure it is a directory
+			if not os.path.isdir(self.filepath): #not a directory
+				os.system("rm "+self.filepath) #remove it and make it a directory
+				os.mkdir(self.filepath)
+
+		self.filepath += "/" #the path to make the file on each interval
+
+	def put(self,graphstr):
+		f = self.companynameforfile #file name
+		ft = f + "_t" #temporary file name
+		dbf = self.time+"_"+graphstr+".html" #file to go in database
+		r = str(p.interval)
+		os.system("cp "+f+" "+dbf) #copy file to put in database later
+
+		#sed 's/<head>/<head>\n<meta http-equiv="refresh" content="20">/' $1 > $1_t
+		sedcmd = "sed 's/<head>/<head>\\n<meta http-equiv=\"refresh\""\
+		+" content=\""+r+"\">/' "+f+" > "+ft
+
+		os.system(sedcmd) #replace the head with a head and meta refresh tag
+		os.system("rm "+f) #remove file
+		os.system("mv "+ft+" "+self.path+"/"+f)
+		os.system("mv "+dbf+" "+self.filepath+dbf)
+
 if __name__ == "__main__":
 	p = parser()
 	ret = p.parse_args()
 	if ret == 0:
 		exit(1)
 
-	print p.run_mode
-	print p.interval
 	auth = tweepy.OAuthHandler("StBTJPvpNnlb7jxO7joCwt0GZ",
 	"8M3ReVr2Knkmdci1zBGtfM4NUsLJH2NvQJbWorGRNg0o64rJfT")
 	auth.set_access_token("3008646015-2ae2vykbLAT65ceJueytFDVkFaoOHjbmv8gELw6",
