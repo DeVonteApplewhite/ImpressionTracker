@@ -2,6 +2,7 @@
 #02/25/15 CSE40YYY
 
 import json,sys,datetime,time
+import re
 sys.path.insert(0,"PyHighcharts-master/highcharts")
 
 from chart import Highchart
@@ -73,6 +74,7 @@ class mood():
 		self.moodbin['good'] = []
 		self.moodbin['bad'] = []
 		self.moodbin['neutral'] = []
+		self.moodbin['useless'] = []
 		self.count = 0 #total tweets processed
 
 		self.avg_followers_seed = []
@@ -83,6 +85,7 @@ class mood():
 		self.goodcount = 0
 		self.badcount = 0
 		self.neutralcount = 0
+		self.uselesscount = 0
 		self.localcount = 0 #total tweets processed in an interval
 
 
@@ -125,9 +128,42 @@ class mood():
 	def netmood(self,text):
 		net = 0 #net mood starts at zero
 		words = text.split() #split into an array of words
+
+		negativeList = ["not", "none", "hardly", "rarely", "scarcely", "few", "little", "never", "neither", "nor", "nobody", "nothing", "nowhere", "isn't", "don't", "hadn't", "can't", "didn't", "won't","no"]
+		tweetWords = 0
+		negIndex = -1
+		hasMoodWords = False
+
 		for item in words: #go through each word
+			item = re.split('[.,!?]', item)[0]
+
+			if item in negativeList:
+				negIndex = tweetWords
+				tweetWords += 1
+				continue
+
+
 			if item in self.moodwords: #mood word detected
-				net += self.moodwords[item]
+
+				hasMoodWords = True
+				#print item
+
+
+				if negIndex != -1:
+					if tweetWords-negIndex == 1:
+						net += self.moodwords[item]*(-1)
+					else:
+						net += self.moodwords[item]
+					negIndex = -1
+
+				else:
+					net += self.moodwords[item]
+			tweetWords += 1
+
+		if hasMoodWords == False:
+			net = 200
+
+
 		return net
 	#end def netmood
 
@@ -167,9 +203,26 @@ class mood():
 		except KeyError:
 			return 0
 
+		if a['lang'] != "en":
+			return 0
 
+
+	
 
 		score = self.netmood(s.lower().encode('utf-8'))
+
+
+		if score > 140: #useless tweet
+			self.uselesscount += 1
+			score = 0
+		elif score > 0: #good tweet
+			self.goodcount += 1
+		elif score < 0: #bad tweet
+			self.badcount += 1
+		else: #neutral tweet
+			self.neutralcount += 1
+
+
 
 		#calculate multiplier for more followers
 		follower_multiplier = 1
@@ -189,16 +242,10 @@ class mood():
 
 		self.scoredump += score*follower_multiplier #aggregate net score
 
-		#print score
-		#print score*follower_multiplier
-		#print follower_count
 
-		if score > 0: #good tweet
-			self.goodcount += 1
-		elif score < 0: #bad tweet
-			self.badcount += 1
-		else: #neutral tweet
-			self.neutralcount += 1
+
+
+
 
 		self.localcount += 1
 		self.count += 1 #bookkeeping for entire process
@@ -219,6 +266,7 @@ class mood():
 				self.moodbin['good'].append(self.goodcount)
 				self.moodbin['bad'].append(self.badcount)
 				self.moodbin['neutral'].append(self.neutralcount)
+				self.moodbin['useless'].append(self.uselesscount)
 
 				self.clear() #reset stats
 
