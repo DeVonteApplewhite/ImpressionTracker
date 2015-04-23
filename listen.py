@@ -21,7 +21,7 @@ class parser():
 		print "Options (short/long if available) [arguments] and explanations"
 		print "-c --company [name of company] company to track"
 		print "-f --filename [name of file containing track words]"
-		print "-g --graph [line/pie/all] which graph to create"
+		print "-g --graph [line/pie/all] which graph to create **OBSOLETE**"
 		print "-i --interval [value in seconds] interval between data dumps"
 		print "-h --help displays helpful information on options available"
 		print "-p --print prints out tweets to STDOUT"
@@ -139,18 +139,13 @@ class CustomStreamListener(tweepy.StreamListener): #listens for incomming tweets
 			result = self.impression.add(outString)
 
 			if result == 1: #show dumped data
-				if self.graph == None or self.graph in ['line','all']:
-					self.companynameforfile = self.companyname.lower()+"_line.html"
-					self.impression.linegraph(self.companyname,self.companynameforfile,1) #show second line
-					self.put("line")
-					#os.system("./putinwww.py "+self.companynameforfile+" "+str(p.interval))
+				if self.graph == None or 1: #TODO: Change if other graphs exist
+					self.companynameforfile = self.companyname.lower()+"_graph.html"
+					self.impression.graph(self.companyname,self.companynameforfile,1) #show second line
+					self.put("graph")
+
 					print self.url+self.companynameforfile
-				if self.graph in ['pie','all']:
-					self.companynameforfile = self.companyname.lower()+"_pie.html"
-					self.impression.piegraph(self.companyname,self.companynameforfile) #show second line
-					self.put("pie")
-					#os.system("./putinwww.py "+self.companynameforfile+" "+str(p.interval))
-					print self.url+self.companynameforfile
+
 		else: #want to print data (None or p fall under this case)
 			print outString.rstrip()
 		

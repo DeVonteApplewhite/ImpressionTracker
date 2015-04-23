@@ -152,9 +152,6 @@ class mood():
 		if func == 'line':
 			outfilename = companyname.lower()+"_line.html"
 			self.linegraph(companyname,outfilename,1) #adds count data
-		elif func == 'pie':
-			outfilename = companyname.lower()+"_pie.html"
-			self.piegraph(companyname,outfilename) #single pie
 
 	def add(self,tweet): #process a tweet
 		try:
@@ -238,30 +235,7 @@ class mood():
 	def set_interval(self,value):
 		self.interval = value
 
-	def piegraph(self,companyname,filename,multi=False):
-		chart = Highchart()
-		chart.title(companyname)
-
-		good = 0
-		bad = 0
-		neutral = 0
-
-		if multi == False:
-			good = sum(self.moodbin['good'])
-			bad = sum(self.moodbin['bad'])
-			neutral = sum(self.moodbin['neutral'])
-	
-		chart.add_data_set([["Good Tweets", int(100*good/float(self.count or 1))],
-		    ["Bad Tweets", int(100*bad/float(self.count or 1))],
-	["Neutral Tweets", int(100*neutral/float(self.count or 1))]],
-		    series_type="pie",
-		    name=companyname+" Impression Pie Chart",
-		    startAngle=45)
-		chart.colors([self.colors['Green'],self.colors['Red'],self.colors['Yellow']])
-		chart.set_options(self.EXAMPLE_CONFIG)
-		chart.show(filename)
-
-	def linegraph(self,companyname,filename,countdata = None):
+	def graph(self,companyname,filename,countdata = None):
 		chart = Highchart()
 		chart.title(companyname)
 
