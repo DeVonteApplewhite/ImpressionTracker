@@ -180,14 +180,14 @@ class mood():
 			self.moodbin['good'].append(self.goodcount)
 			self.moodbin['bad'].append(self.badcount)
 			self.moodbin['neutral'].append(self.neutralcount)
+			self.moodbin['useless'].append(self.uselesscount)
 
 		f.close() #close file
 
 		print "Total Tweets: %d"%(self.count)
 
-		if func == 'line':
-			outfilename = companyname.lower()+"_line.html"
-			self.linegraph(companyname,outfilename,1) #adds count data
+		outfilename = companyname.lower()+"_graph.html"
+		self.graph(companyname,outfilename) #adds count data
 
 	def add(self,tweet): #process a tweet
 		try:
@@ -278,26 +278,24 @@ class mood():
 		self.goodcount = 0
 		self.badcount = 0
 		self.neutralcount = 0
+		self.uselesscount = 0
 		self.localcount = 0
 
 	def set_interval(self,value):
 		self.interval = value
 
-	def graph(self,companyname,filename,countdata = None):
+	def graph(self,companyname,filename):
 		chart = Highchart()
 		chart.title(companyname)
 
-		# Add data
+		# Add bar graph
 		chart.add_data_set(self.moodbin['good'], series_type="column", name="Good", index=1)
 		chart.add_data_set(self.moodbin['bad'], series_type="column", name="Bad", index=1)
 		chart.add_data_set(self.moodbin['neutral'], series_type="column", name="Neutral", index=1)
-		chart.add_data_set(self.moodarray, series_type="line", name=companyname+" raw net mood", index=1, lineWidth=4, marker={"lineColor":self.colors['White'],"radius":4,"lineWidth":2})
 
-		# Add average mood
-		if countdata != None:
-			moodtotal = [self.moodbin['good'][i]+self.moodbin['bad'][i] for i in range(len(self.moodbin['good']))] #count of nonzero mood scores
-			averagemood = [float(self.moodarray[i])/(moodtotal[i] or 1) for i in range(len(self.moodarray))]
-			chart.add_data_set(averagemood, series_type="line", name=companyname+" average net mood", index=2)
+		# Add raw mood score and tweet count lines
+		chart.add_data_set(self.moodarray, series_type="line", name=companyname+" net mood", index=1, lineWidth=4, marker={"lineColor":self.colors['White'],"radius":4,"lineWidth":2})
+		chart.add_data_set(self.countarray, series_type="line", name=companyname+" tweet count", index=2)
 		
 		chart.colors([self.colors['Green'],self.colors['Red'],self.colors['Yellow'],self.colors['Blue'],self.colors['Purple']])
 
@@ -307,7 +305,7 @@ class mood():
 		chart.show(filename)
 
 if __name__ == "__main__":
-	m = mood(120)
+	m = mood(10)
 	m.load('text_files/positive-words.txt','text_files/negative-words.txt')
-	m.processTweets('text_files/walmart.txt','Lolmart','pie')
+	m.processTweets('Apple.txt','Lapple','pie')
 #end main

@@ -136,7 +136,7 @@ class CustomStreamListener(tweepy.StreamListener): #listens for incomming tweets
 		if result == 1: #show dumped data
 			if self.graph == None or 1: #TODO: Change if other graphs exist
 				self.companynameforfile = self.companyname.lower()+"_graph.html"
-				self.impression.graph(self.companyname,self.companynameforfile,1) #show second line
+				self.impression.graph(self.companyname,self.companynameforfile) #show second line
 				self.put("graph")
 				print self.url+self.companynameforfile
 
