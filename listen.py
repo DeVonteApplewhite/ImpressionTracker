@@ -11,23 +11,21 @@ from mood import mood
 class parser():
 	def __init__(self):
 		self.track_array = []
-		self.run_mode = None
+		self.do_write = None
 		self.interval = None
 		self.company = None
 		self.graph = None
 
 	def help(self):
 		print "usage listen.py options and arguments"
-		print "Options (short/long if available) [arguments] and explanations"
+		print "Options -short (--long) [arguments] explanation"
 		print "-c --company [name of company] company to track"
 		print "-f --filename [name of file containing track words]"
 		print "-g --graph [line/pie/all] which graph to create **OBSOLETE**"
 		print "-i --interval [value in seconds] interval between data dumps"
 		print "-h --help displays helpful information on options available"
-		print "-p --print prints out tweets to STDOUT"
-		print "\t(if this option is passed, -w or --web cannot used)"
 		print "-t --track [word1 word2 ... wordN] list of words to track"
-		print "-w --web processes tweets and sends results to html files"
+		print "-w --write writes tweets to a file named <company name>.txt"
 
 	def parse_args(self):
 		if len(sys.argv) == 1: #gave no arguments
@@ -45,25 +43,21 @@ class parser():
 				mode = '-i'
 			elif item == '-h' or item == '--help':
 				self.help()
-			elif item == '-p' or item == '--print':
-				if self.run_mode == 'w': #asked for both w and p
-					print "Cannot operate in both web and print mode"
-					return 0
-				self.run_mode = 'p' #set for print mode
 			elif item == '-t' or item == '--track':
 				mode = '-t'
-			elif item == '-w' or item == '--web':
-				if self.run_mode == 'p': #asked for both w and p
-					print "Cannot operate in both web and print mode"
-					return 0
-				self.run_mode = 'w' #set for web mode
+			elif item == '-w' or item == '--write':
+				self.do_write = 1 #set for web mode
 			elif item == '-c' or item == '--company': #adding company name
 				mode = '-c'
 			elif item == '-g' or item == '--graph': #asking for graph feature
 				mode = '-g'
 			else: #process based on modes
 				if mode == '-f':
-					f = open(item)
+					try:
+						f = open(item)
+					except IOError:
+						print "No such file %s"%(item)
+						return 0
 					for line in f:
 						self.track_array.append(line.rstrip()) #add word to tracker
 					atleastoneword = 1
@@ -96,7 +90,7 @@ class CustomStreamListener(tweepy.StreamListener): #listens for incomming tweets
 
 		p = myparser
 		self.count = 0 #count tweet
-		self.mode = None
+		self.do_write = None
 		self.impression = None
 		self.companyname = None
 		self.companynameforfile = None #when formatting for files
@@ -111,11 +105,11 @@ class CustomStreamListener(tweepy.StreamListener): #listens for incomming tweets
 		self.date = datetime.datetime.now().strftime("%Y-%m-%d") #get current date
 		self.time = datetime.datetime.now().strftime("%H:%M:%S") #get current time
 		self.filepath = None
+		self.f = None #used to write to the file containing company tweets
 
 		if p != None: #valid parser object
-			if p.run_mode != None:
-				self.mode = p.run_mode
-		
+			if p.do_write != None: #automatically true if != None
+				self.do_write = 1 #the value of p.do_write doesn't matter
 			if p.interval != None:
 				self.impression = mood(p.interval)
 			else:
@@ -130,24 +124,24 @@ class CustomStreamListener(tweepy.StreamListener): #listens for incomming tweets
 		self.impression.load('text_files/positive-words.txt','text_files/negative-words.txt')
 
 		self.setup() #self.path will be ~/www/it/company_name and self.filepath will be updated
+		if self.do_write == 1: #open file for writing tweets
+			self.f = open(self.filepath+self.companyname+".txt","a") #append mode
+
 		print "Database Link:\n%s"%(self.url+self.db)
 
 	def on_data(self, data):
 		outString = data.encode('utf-8')
 
-		if self.mode == 'w': #want to process data internally
-			result = self.impression.add(outString)
+		result = self.impression.add(outString)
+		if result == 1: #show dumped data
+			if self.graph == None or 1: #TODO: Change if other graphs exist
+				self.companynameforfile = self.companyname.lower()+"_graph.html"
+				self.impression.graph(self.companyname,self.companynameforfile,1) #show second line
+				self.put("graph")
+				print self.url+self.companynameforfile
 
-			if result == 1: #show dumped data
-				if self.graph == None or 1: #TODO: Change if other graphs exist
-					self.companynameforfile = self.companyname.lower()+"_graph.html"
-					self.impression.graph(self.companyname,self.companynameforfile,1) #show second line
-					self.put("graph")
-
-					print self.url+self.companynameforfile
-
-		else: #want to print data (None or p fall under this case)
-			print outString.rstrip()
+		if self.do_write == 1: #want to print data
+			self.f.write(outString) #check if it has newlines in it (if not, add \n)
 		
 		return True
 
@@ -211,7 +205,6 @@ if __name__ == "__main__":
 	auth.set_access_token("3008646015-2ae2vykbLAT65ceJueytFDVkFaoOHjbmv8gELw6",
 	"88sNWTJSx0VnSmEKeeJk1s2zJd1kB8VVB4NBSFkvpaHDO")
 	api = tweepy.API(auth)
-	sapi = tweepy.streaming.Stream(auth, CustomStreamListener(p))
 
+	sapi = tweepy.streaming.Stream(auth, CustomStreamListener(p))
 	sapi.filter(track=p.track_array)
-	#sapi.filter(track=['Walmart', 'Sam''s Club', 'Sams Club', 'rollback', 'roll-back'])
