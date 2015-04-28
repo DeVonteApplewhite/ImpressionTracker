@@ -8,6 +8,7 @@ sys.path.insert(0,"PyHighcharts-master/highcharts")
 from chart import Highchart
 from highchart_types import OptionTypeError, Series, SeriesOptions
 
+#TODO: Capture IOError exceptions on open() and other exceptions
 class mood():
 	def __init__(self,interval=300):
 		self.colors = {"Green": "#48DD38" ,"Red": "#FC404A", "Yellow": "#FFCF41","Blue": "#6A6AC9", "Purple": "#B133BE", "Background": "#3E3E40", "Border": "#606063", "White": "#E0E0E3", "Grid Line": "#707073", "Minor Grid Line": "#505053", "Axis Title": "#A0A0A3"}
@@ -274,7 +275,7 @@ class mood():
 
 	def clear(self): #reset stats for next dump
 		self.oldtime = None #reset all stats for next dump
-		self.scoredump = 0
+		#self.scoredump = 0
 		self.goodcount = 0
 		self.badcount = 0
 		self.neutralcount = 0
@@ -305,7 +306,7 @@ class mood():
 		chart.show(filename)
 
 if __name__ == "__main__":
-	m = mood(10)
+	m = mood(120)
 	m.load('text_files/positive-words.txt','text_files/negative-words.txt')
 	m.processTweets('Apple.txt','Lapple','pie')
 #end main

@@ -8,6 +8,7 @@ import tweepy
 import datetime
 from mood import mood
 
+#TODO: Check for bad command line options and do more error checking for robustness
 class parser():
 	def __init__(self):
 		self.track_array = []
