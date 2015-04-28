@@ -7,6 +7,7 @@ sys.path.insert(0,"PyHighcharts-master/highcharts")
 
 from chart import Highchart
 from highchart_types import OptionTypeError, Series, SeriesOptions
+from options import yAxisOptions, BaseOptions
 
 class mood():
 	def __init__(self,interval=300):
@@ -40,23 +41,6 @@ class mood():
        					}
 				  }
    				},
-			"yAxis":{
-      				  "gridLineColor": self.colors['Grid Line'],
-      				  "labels": {
-         				"style": {
-            					"color":self.colors['White']
-         				}
-      				  },
-      				  "lineColor": self.colors['Grid Line'],
-      				  "minorGridLineColor": self.colors['Minor Grid Line'],
-      				  "tickColor": self.colors['Grid Line'],
-      				  "tickWidth": 1,
-      				  "title": {
-         			  	"style": {
-            					'color': self.colors['Axis Title']
-         			  	}
-      				  }
-   				},
 			"legend":{
 			      	  "itemStyle": {
 				  	"color": self.colors['White']
@@ -64,6 +48,7 @@ class mood():
 				  "backgroundColor": self.colors['Border']
 			   	}
 			}
+
 		
 		self.START_TIME = datetime.datetime.now()
 		self.interval = interval #interval to govern certain functions
@@ -203,9 +188,6 @@ class mood():
 		if a['lang'] != "en":
 			return 0
 
-
-	
-
 		score = self.netmood(s.lower().encode('utf-8'))
 
 
@@ -218,7 +200,6 @@ class mood():
 			self.badcount += 1
 		else: #neutral tweet
 			self.neutralcount += 1
-
 
 
 		#calculate multiplier for more followers
@@ -238,10 +219,6 @@ class mood():
 			self.avg_followers = float(total_followers)/len(self.avg_followers_seed)
 
 		self.scoredump += score*follower_multiplier #aggregate net score
-
-
-
-
 
 
 		self.localcount += 1
@@ -274,7 +251,7 @@ class mood():
 
 	def clear(self): #reset stats for next dump
 		self.oldtime = None #reset all stats for next dump
-		self.scoredump = 0
+		#self.scoredump = 0
 		self.goodcount = 0
 		self.badcount = 0
 		self.neutralcount = 0
@@ -288,19 +265,43 @@ class mood():
 		chart = Highchart()
 		chart.title(companyname)
 
+		# Create Tweet Count Y-Axis
+		Y1 = yAxisOptions(title_text='Tweet Count', 
+		opposite=True, 
+		gridLineColor=self.colors['Grid Line'], 
+		labels_style={"color":self.colors['Purple'],"fontSize":20},
+		lineColor=self.colors['Grid Line'], 
+		minorGridLineColor=self.colors['Minor Grid Line'],
+		tickColor=self.colors['Grid Line'],
+		tickWidth=1,
+		title_style={"color":self.colors['Purple']}
+		)
+
+		# Create Mood Score Y-Axis
+		Y2 = yAxisOptions(title_text='Mood Score',
+		gridLineColor=self.colors['Grid Line'], 
+		labels_style={"color":self.colors['Blue'],"fontSize":20},
+		lineColor=self.colors['Grid Line'], 
+		minorGridLineColor=self.colors['Minor Grid Line'],
+		tickColor=self.colors['Grid Line'],
+		tickWidth=1,
+		title_style={"color":self.colors['Blue']}
+		)
+
 		# Add bar graph
 		chart.add_data_set(self.moodbin['good'], series_type="column", name="Good", index=1)
 		chart.add_data_set(self.moodbin['bad'], series_type="column", name="Bad", index=1)
 		chart.add_data_set(self.moodbin['neutral'], series_type="column", name="Neutral", index=1)
 
 		# Add raw mood score and tweet count lines
-		chart.add_data_set(self.moodarray, series_type="line", name=companyname+" net mood", index=1, lineWidth=4, marker={"lineColor":self.colors['White'],"radius":4,"lineWidth":2})
+		chart.add_data_set(self.moodarray, series_type="line", name=companyname+" net mood", index=1, 
+				   lineWidth=4, marker={"lineColor":self.colors['White'],"radius":4,"lineWidth":1}, yAxis=1)
 		chart.add_data_set(self.countarray, series_type="line", name=companyname+" tweet count", index=2)
 		
 		chart.colors([self.colors['Green'],self.colors['Red'],self.colors['Yellow'],self.colors['Blue'],self.colors['Purple']])
-
 		chart.set_start_date(self.START_TIME)
 		chart.set_interval(1000 * self.interval)
+		chart.set_yAxis(Y1,Y2)
 		chart.set_options(self.EXAMPLE_CONFIG)
 		chart.show(filename)
 
